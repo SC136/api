@@ -1,0 +1,13 @@
+@echo off
+echo Starting Antigravity Image Analyzer...
+echo.
+echo Step 1: Installing Python dependencies...
+pip install -r requirements.txt
+echo.
+echo Step 2: Starting Python server on port 5000...
+start cmd /k python server.py
+echo.
+echo Step 3: Starting Next.js development server on port 3000...
+echo Wait for the Python server to load the model (takes ~30 seconds on first run)
+timeout /t 5
+npm run dev
