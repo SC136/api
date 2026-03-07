@@ -309,16 +309,51 @@ def create_app():
             pipe = loaded["pipe"]
             pad_token_id = loaded.get("pad_token_id")
 
+            tokenizer = pipe.tokenizer
+        
+            if hasattr(tokenizer, "apply_chat_template") and getattr(tokenizer, "chat_template", None):
+                messages = [
+                    {"role": "system", "content": "You are a helpful and friendly AI assistant."},
+                    {"role": "user", "content": prompt}
+                ]
+                
+                # Note: some models don't support system prompts, so we can try to apply it,
+                # and if it fails, fallback to just the user message
+                try:
+                    formatted_prompt = tokenizer.apply_chat_template(
+                        messages, 
+                        tokenize=False, 
+                        add_generation_prompt=True
+                    )
+                except Exception:
+                    messages = [{"role": "user", "content": prompt}]
+                    formatted_prompt = tokenizer.apply_chat_template(
+                        messages, 
+                        tokenize=False, 
+                        add_generation_prompt=True
+                    )
+                kwargs = {"return_full_text": False}
+            else:
+                formatted_prompt = prompt
+                kwargs = {}
+
             outputs = pipe(
-                prompt,
+                formatted_prompt,
                 max_new_tokens=max_new_tokens,
                 do_sample=True,
                 temperature=temperature,
                 pad_token_id=pad_token_id,
                 num_return_sequences=1,
+                **kwargs,
             )
 
             text = outputs[0].get("generated_text") if outputs else ""
+            
+            # If return_full_text=False is not honored (common in some pipeline versions + tokenizer chat templates), 
+            # manually slice the prompt off
+            if text.startswith(formatted_prompt):
+                text = text[len(formatted_prompt):]
+                
             return jsonify({
                 'text': text,
                 'model': model_key,
