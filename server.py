@@ -326,12 +326,16 @@ def create_app():
                         add_generation_prompt=True
                     )
                 except Exception:
-                    messages = [{"role": "user", "content": prompt}]
-                    formatted_prompt = tokenizer.apply_chat_template(
-                        messages, 
-                        tokenize=False, 
-                        add_generation_prompt=True
-                    )
+                    # If it failed because of the system role, let's try manual fallback for known models or just user
+                    if "tinyllama" in model_key.lower():
+                        formatted_prompt = f"<|system|>\nYou are a helpful and friendly AI assistant.</s>\n<|user|>\n{prompt}</s>\n<|assistant|>\n"
+                    else:
+                        messages = [{"role": "user", "content": prompt}]
+                        formatted_prompt = tokenizer.apply_chat_template(
+                            messages, 
+                            tokenize=False, 
+                            add_generation_prompt=True
+                        )
                 kwargs = {"return_full_text": False}
             else:
                 formatted_prompt = prompt
