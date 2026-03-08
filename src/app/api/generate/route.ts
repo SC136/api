@@ -12,7 +12,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
     }
 
-    const response = await fetch("https://wise-reasonably-glider.ngrok-free.app/generate", {
+    const topP = body?.top_p ?? 0.9;
+    const topK = body?.top_k ?? 50;
+    const repetitionPenalty = body?.repetition_penalty ?? 1.2;
+
+    const response = await fetch("http://localhost:5000/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -20,6 +24,9 @@ export async function POST(req: NextRequest) {
         model: modelKey,
         max_new_tokens: maxNewTokens,
         temperature,
+        top_p: topP,
+        top_k: topK,
+        repetition_penalty: repetitionPenalty,
       }),
     });
 

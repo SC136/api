@@ -302,8 +302,14 @@ def create_app():
             data = request.get_json(silent=True) or {}
             prompt = data.get('prompt', '')
             model_key = data.get('model', 'smollm2-1.7b')
-            max_new_tokens = int(data.get('max_new_tokens', 256))
             temperature = float(data.get('temperature', 0.7))
+            top_p = float(data.get('top_p', 0.9))
+            top_k = int(data.get('top_k', 50))
+            repetition_penalty = float(data.get('repetition_penalty', 1.3))
+
+            # Scale max_new_tokens based on prompt length if not explicitly set
+            default_max = max(32, min(256, len(prompt.split()) * 8))
+            max_new_tokens = int(data.get('max_new_tokens', default_max))
 
             loaded = get_llm(model_key)
             pipe = loaded["pipe"]
@@ -313,7 +319,7 @@ def create_app():
         
             if hasattr(tokenizer, "apply_chat_template") and getattr(tokenizer, "chat_template", None):
                 messages = [
-                    {"role": "system", "content": "You are a helpful and friendly AI assistant."},
+                    {"role": "system", "content": "You are a helpful, friendly AI assistant. Respond concisely and directly to what the user says. For greetings, greet back briefly."},
                     {"role": "user", "content": prompt}
                 ]
                 
@@ -328,7 +334,7 @@ def create_app():
                 except Exception:
                     # If it failed because of the system role, let's try manual fallback for known models or just user
                     if "tinyllama" in model_key.lower():
-                        formatted_prompt = f"<|system|>\nYou are a helpful and friendly AI assistant.</s>\n<|user|>\n{prompt}</s>\n<|assistant|>\n"
+                        formatted_prompt = f"<|system|>\nYou are a helpful, friendly AI assistant. Respond concisely and directly to what the user says. For greetings, greet back briefly.</s>\n<|user|>\n{prompt}</s>\n<|assistant|>\n"
                     else:
                         messages = [{"role": "user", "content": prompt}]
                         formatted_prompt = tokenizer.apply_chat_template(
@@ -346,6 +352,9 @@ def create_app():
                 max_new_tokens=max_new_tokens,
                 do_sample=True,
                 temperature=temperature,
+                top_p=top_p,
+                top_k=top_k,
+                repetition_penalty=repetition_penalty,
                 pad_token_id=pad_token_id,
                 num_return_sequences=1,
                 **kwargs,
@@ -357,6 +366,15 @@ def create_app():
             # manually slice the prompt off
             if text.startswith(formatted_prompt):
                 text = text[len(formatted_prompt):]
+
+            # Trim trailing incomplete sentence if text was cut off by max_new_tokens
+            text = text.strip()
+            if text and text[-1] not in '.!?"\')':
+                # Find the last sentence-ending punctuation
+                for i in range(len(text) - 1, -1, -1):
+                    if text[i] in '.!?':
+                        text = text[:i + 1]
+                        break
                 
             return jsonify({
                 'text': text,

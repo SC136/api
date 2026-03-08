@@ -217,217 +217,218 @@ export default function Home() {
     }
   };
 
+  const currentModel = models.find((m) => m.key === selectedModel);
+  const modeValue = selectedMode || currentModel?.default_mode || currentModel?.modes?.[0];
+
   return (
     <main className={styles.main}>
-      <div className={styles.container}>
-        <h1 className={styles.title}>Image Analyzer</h1>
-        <div className={styles.modelSelector}>
-          <label htmlFor="model-select">Model:</label>
-          <select
-            id="model-select"
-            value={selectedModel}
-            onChange={(e) => setSelectedModel(e.target.value)}
-            className={styles.modelSelect}
-          >
-            {models.map((model) => (
-              <option key={model.key} value={model.key}>
-                {model.name} - {model.description}
-              </option>
-            ))}
-          </select>
-        </div>
+      <div className={styles.grain} />
 
-        {(() => {
-          const current = models.find((m) => m.key === selectedModel);
-          if (!current?.modes || current.modes.length === 0) return null;
-          const modeValue = selectedMode || current.default_mode || current.modes[0];
-          return (
-            <div className={styles.modelSelector}>
-              <label htmlFor="mode-select">Mode:</label>
+      <header className={styles.header}>
+        <h1 className={styles.logo}>antigravity</h1>
+        <p className={styles.tagline}>AI workbench</p>
+      </header>
+
+      <div className={styles.panels}>
+        {/* === VISION === */}
+        <section className={`${styles.panel} ${styles.panelVision}`}>
+          <div className={styles.panelHeader}>
+            <span className={styles.panelNumber}>01</span>
+            <h2 className={styles.panelTitle}>Vision</h2>
+          </div>
+
+          <div className={styles.controlGroup}>
+            <label className={styles.label} htmlFor="model-select">Model</label>
+            <select
+              id="model-select"
+              value={selectedModel}
+              onChange={(e) => setSelectedModel(e.target.value)}
+              className={styles.select}
+            >
+              {models.map((model) => (
+                <option key={model.key} value={model.key}>
+                  {model.name} &mdash; {model.description}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {currentModel?.modes && currentModel.modes.length > 0 && (
+            <div className={styles.controlGroup}>
+              <label className={styles.label} htmlFor="mode-select">Mode</label>
               <select
                 id="mode-select"
                 value={modeValue}
                 onChange={(e) => setSelectedMode(e.target.value)}
-                className={styles.modelSelect}
+                className={styles.select}
               >
-                {current.modes.map((mode) => (
-                  <option key={mode} value={mode}>
-                    {mode}
-                  </option>
+                {currentModel.modes.map((mode) => (
+                  <option key={mode} value={mode}>{mode}</option>
                 ))}
               </select>
             </div>
-          );
-        })()}
-
-        <div className={styles.buttonGroup}>
-          <button
-            className={styles.webcamButton}
-            onClick={startWebcam}
-            disabled={showWebcam}
-          >
-            📷 Use Webcam
-          </button>
-        </div>
-
-        {showWebcam ? (
-          <div className={styles.webcamContainer}>
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              className={styles.webcamVideo}
-              style={{ minHeight: '360px' }}
-            />
-            <canvas ref={canvasRef} style={{ display: "none" }} />
-            <div className={styles.webcamControls}>
-              <button onClick={captureImage} className={styles.captureButton}>
-                📸 Capture
-              </button>
-              <button
-                onClick={() => {
-                  setShowWebcam(false);
-                  if (stream) {
-                    stream.getTracks().forEach((track) => track.stop());
-                    setStream(null);
-                  }
-                }}
-                className={styles.cancelButton}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div
-            className={styles.uploadArea}
-            onClick={() => inputRef.current?.click()}
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-          >
-            <input
-              type="file"
-              ref={inputRef}
-              onChange={handleFileChange}
-              accept="image/*"
-              className={styles.hiddenInput}
-            />
-
-            {preview ? (
-              <div className={styles.previewContainer}>
-                <Image
-                  src={preview}
-                  alt="Preview"
-                  fill
-                  className={styles.previewImage}
-                />
-                <button className={styles.removeButton} onClick={clearImage}>
-                  ×
-                </button>
-              </div>
-            ) : (
-              <div className={styles.uploadPlaceholder}>
-                <svg
-                  width="48"
-                  height="48"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="17 8 12 3 7 8" />
-                  <line x1="12" y1="3" x2="12" y2="15" />
-                </svg>
-                <p>Drag & drop or click to upload</p>
-              </div>
-            )}
-          </div>
-        )}
-        <p className={styles.subtitle}>
-          Upload an image to get intelligent descriptions. Powered by open-source AI.
-        </p>
-
-        <button
-          className={styles.analyzeButton}
-          onClick={analyzeImage}
-          disabled={!file || loading}
-        >
-          {loading ? (
-            <div className={styles.loading}>
-              <div className={styles.spinner} /> Analyzing...
-            </div>
-          ) : (
-            "Analyze Image"
           )}
-        </button>
 
-        {result && (
-          <div className={styles.resultArea}>
-            <h2 className={styles.resultTitle}>Analysis Result</h2>
-            <div style={{ whiteSpace: "pre-wrap" }}>{result}</div>
-          </div>
-        )}
-
-        <div className={styles.llmCard}>
-          <div className={styles.llmHeader}>
-            <h2 className={styles.resultTitle}>Text Generator</h2>
-            <div className={styles.modelSelector} style={{ margin: 0 }}>
-              <label htmlFor="llm-select">LLM:</label>
-              <select
-                id="llm-select"
-                value={selectedLlm}
-                onChange={(e) => setSelectedLlm(e.target.value)}
-                className={styles.modelSelect}
-              >
-                {llms.map((llm) => (
-                  <option key={llm.key} value={llm.key}>
-                    {llm.name} - {llm.description}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className={styles.questionInput}>
-            <label htmlFor="prompt-input">Prompt:</label>
-            <textarea
-              id="prompt-input"
-              className={styles.promptArea}
-              placeholder="Ask for a roast, a caption, or any text generation."
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              rows={4}
-            />
-          </div>
-
-          <div className={styles.llmActions}>
+          <div className={styles.mediaActions}>
             <button
-              className={styles.analyzeButton}
-              onClick={generateText}
-              disabled={!prompt.trim() || llmLoading}
+              className={styles.btnOutline}
+              onClick={startWebcam}
+              disabled={showWebcam}
             >
-              {llmLoading ? (
-                <div className={styles.loading}>
-                  <div className={styles.spinner} /> Generating...
-                </div>
-              ) : (
-                "Generate"
-              )}
+              <span className={styles.btnIcon}>&#9673;</span> Webcam
             </button>
           </div>
 
-          {llmResult && (
-            <div className={styles.resultArea}>
-              <h3 className={styles.resultTitle}>Generation</h3>
-              <div style={{ whiteSpace: "pre-wrap" }}>{llmResult}</div>
+          {showWebcam ? (
+            <div className={styles.webcamZone}>
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className={styles.webcamVideo}
+              />
+              <canvas ref={canvasRef} style={{ display: "none" }} />
+              <div className={styles.webcamActions}>
+                <button onClick={captureImage} className={styles.btnAccent}>
+                  Capture
+                </button>
+                <button
+                  onClick={() => {
+                    setShowWebcam(false);
+                    if (stream) {
+                      stream.getTracks().forEach((track) => track.stop());
+                      setStream(null);
+                    }
+                  }}
+                  className={styles.btnGhost}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div
+              className={styles.dropZone}
+              onClick={() => inputRef.current?.click()}
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+            >
+              <input
+                type="file"
+                ref={inputRef}
+                onChange={handleFileChange}
+                accept="image/*"
+                className={styles.hiddenInput}
+              />
+              {preview ? (
+                <div className={styles.previewWrap}>
+                  <Image
+                    src={preview}
+                    alt="Preview"
+                    fill
+                    className={styles.previewImage}
+                  />
+                  <button className={styles.removeBtn} onClick={clearImage}>
+                    &times;
+                  </button>
+                </div>
+              ) : (
+                <div className={styles.dropPlaceholder}>
+                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                  </svg>
+                  <span>Drop image or click to browse</span>
+                </div>
+              )}
             </div>
           )}
-        </div>
+
+          <button
+            className={styles.btnPrimary}
+            onClick={analyzeImage}
+            disabled={!file || loading}
+          >
+            {loading ? (
+              <span className={styles.loadingInline}>
+                <span className={styles.spinner} /> Analyzing&hellip;
+              </span>
+            ) : (
+              "Analyze"
+            )}
+          </button>
+
+          {result && (
+            <div className={styles.resultBox}>
+              <h3 className={styles.resultLabel}>Result</h3>
+              <div className={styles.resultText}>{result}</div>
+            </div>
+          )}
+        </section>
+
+        {/* === LANGUAGE === */}
+        <section className={`${styles.panel} ${styles.panelLanguage}`}>
+          <div className={styles.panelHeader}>
+            <span className={styles.panelNumber}>02</span>
+            <h2 className={styles.panelTitle}>Language</h2>
+          </div>
+
+          <div className={styles.controlGroup}>
+            <label className={styles.label} htmlFor="llm-select">Model</label>
+            <select
+              id="llm-select"
+              value={selectedLlm}
+              onChange={(e) => setSelectedLlm(e.target.value)}
+              className={styles.select}
+            >
+              {llms.map((llm) => (
+                <option key={llm.key} value={llm.key}>
+                  {llm.name} &mdash; {llm.description}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className={styles.controlGroup}>
+            <label className={styles.label} htmlFor="prompt-input">Prompt</label>
+            <textarea
+              id="prompt-input"
+              className={styles.textarea}
+              placeholder="Ask anything — generate text, stories, code…"
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              rows={5}
+            />
+          </div>
+
+          <button
+            className={styles.btnSecondary}
+            onClick={generateText}
+            disabled={!prompt.trim() || llmLoading}
+          >
+            {llmLoading ? (
+              <span className={styles.loadingInline}>
+                <span className={styles.spinnerLight} /> Generating&hellip;
+              </span>
+            ) : (
+              "Generate"
+            )}
+          </button>
+
+          {llmResult && (
+            <div className={styles.resultBox}>
+              <h3 className={styles.resultLabel}>Output</h3>
+              <div className={styles.resultText}>{llmResult}</div>
+            </div>
+          )}
+        </section>
       </div>
+
+      <footer className={styles.footer}>
+        <span>powered by open-source AI models</span>
+      </footer>
     </main>
   );
 }

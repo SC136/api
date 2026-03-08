@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
     try {
-        const response = await fetch("https://wise-reasonably-glider.ngrok-free.app/models");
+        const response = await fetch("http://localhost:5000/models");
 
         if (!response.ok) {
             return NextResponse.json(

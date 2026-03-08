@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
         localFormData.append("image", imageFile);
         localFormData.append("model", modelKey);
 
-        const response = await fetch("https://wise-reasonably-glider.ngrok-free.app/plant", {
+        const response = await fetch("http://localhost:5000/plant", {
             method: "POST",
             body: localFormData,
         });
